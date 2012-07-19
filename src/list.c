@@ -1,16 +1,16 @@
 #include	<stdio.h>
 
-#define		INOUT_THE_CHOICE	"Please input your choise:"
+#define		INOUT_THE_CHOICE	"Please input your choise : "
 
 void show_menu()
 {
-	printf("Choice menu:");
+	printf("Choice menu:\n");
 	printf(" A/a - Add a new item to the list.\n");
 	printf(" D/d - Delete a item from the list.\n");
 	printf(" S/s - Show the items in the list.\n");
 	printf(" C/c - Create the list.\n");
 	printf(" H/h/? - Show the help.\n");
-	printf(" Q/q - Quit.");
+	printf(" Q/q - Quit.\n");
 }
 
 int main(int argc, char *argv[])
@@ -47,7 +47,10 @@ int main(int argc, char *argv[])
 				printf("Goodbye, Guy.\n");
 				goto end;
 			default:
-				printf("Invalid choice.\n");
+				printf("\033[31m");
+				printf("Invalid choice.");
+				printf("\033[0m");
+				printf("\n");
 				show_menu();
 				break;
 		}
