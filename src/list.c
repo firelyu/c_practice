@@ -14,6 +14,7 @@ typedef	struct car {
 int show_item(car *head);
 car *new_item(char *brand, char *model);
 car *add_item(car *head, car *new);
+int add_item2(car **head, car *new);
 
 int show_item(car *head) {
 	for (; head != NULL; head = head->next)
@@ -40,6 +41,13 @@ car *add_item(car *head, car *new) {
 	head = new;
 	
 	return head;
+}
+
+int add_item2(car **head, car *new) {
+	new->next = *head;
+	*head = new;
+
+	return 0;
 }
 
 void show_menu()
@@ -80,6 +88,7 @@ int main(int argc, char *argv[])
 					printf("Can't add the item to the list");
 					break;
 				}
+				//add_item2(&head, new);
 				break;
 			
 			case 'D':
@@ -116,6 +125,7 @@ int main(int argc, char *argv[])
 				break;
 		}
 		while(getchar() != '\n') continue;
+		printf("\n");
 		printf(INOUT_THE_CHOICE);
 	}
 
