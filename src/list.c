@@ -4,6 +4,7 @@
 
 #define		STR_BUG_SIZE		128
 #define		INOUT_THE_CHOICE	"Please input your choise : "
+#define		clean_input()		while(getchar() != '\n') continue;
 
 typedef	struct car {
 	char		brand[STR_BUG_SIZE];
@@ -11,15 +12,22 @@ typedef	struct car {
 	struct car	*next;
 } car;
 
+void show_menu();
 int show_item(car *head);
 car *new_item(char *brand, char *model);
 car *add_item(car *head, car *new);
 int add_item2(car **head, car *new);
+car *delete_item(car *head, unsigned int index);
+int delete_item2(car **head, unsigned int index);
 
 int show_item(car *head) {
-	for (; head != NULL; head = head->next)
-		printf("Brand : %s\t\tModel : %s\n", head->brand, head->model);
-	
+	unsigned int	index = 0;
+
+	for (; head != NULL; head = head->next) {
+		index ++;
+		printf("%u Brand : %s\t\tModel : %s\n", index,  head->brand, head->model);
+	}
+
 	return 0;
 }
 
@@ -50,6 +58,65 @@ int add_item2(car **head, car *new) {
 	return 0;
 }
 
+car *delete_item(car *head, unsigned int index) {
+	car	*p, *pre;
+	int i;
+	
+	if (head == NULL) {
+		printf("The list is empty.\n");
+		return NULL;
+	}
+
+	pre = NULL;
+	i = 1;
+	for (p = head; p != NULL; p = p->next, i++) {
+		if (i == index) {
+			if (pre == NULL) head = p->next;
+			else pre->next = p->next;
+
+			free(p);
+			return head;
+		}
+		pre = p;
+	}
+
+	printf("Index %u not in the list.\n", index);
+	return head;
+}
+
+int delete_item2(car **head, unsigned int index) {
+	car *p, *pre;
+	int i;
+
+	if (head == NULL) {
+		printf("The list is empty.\n");
+		return 1;
+	}
+	
+	if (index < 1) {
+		printf("The index must be larger than 1.\n");
+		return 1;
+	}
+	else {
+		pre = NULL;
+		
+		i = 1;
+		for (p = *head; p != NULL; p = p->next, i++) {
+			if (i == index) {
+				if (pre == NULL) *head = p->next;
+				else pre->next = p->next;
+				
+				free(p);
+				return 0;
+			}
+			pre = p;
+		}
+	}
+
+	printf("Index %u not in the list.\n", index);
+	return 1;
+}
+
 void show_menu()
 {
 	printf("Choice menu:\n");
@@ -65,13 +132,16 @@ int main(int argc, char *argv[])
 	char	choice;
 	car	*head = NULL, *new = NULL;
 	char	ibrand[STR_BUG_SIZE], imodel[STR_BUG_SIZE];
-	
+	unsigned int	index;
+
 	show_menu();
 	printf(INOUT_THE_CHOICE);
 	while(choice = getchar()) {
 		switch(choice) {
 			case 'A':
 			case 'a':
+				clean_input();
+
 				printf("Input the brand : ");
 				scanf("%s", ibrand);
 				printf("Input the model : ");
@@ -93,7 +163,12 @@ int main(int argc, char *argv[])
 			
 			case 'D':
 			case 'd':
-				printf("Delete a item from the list.\n");
+				clean_input();
+
+				printf("Delete the item from the list, input the index : ");
+				scanf("%u", &index);
+				head = delete_item(head, index);
+				//delete_item2(&head, index);
 				break;
 			
 			case 'S':
@@ -124,7 +199,7 @@ int main(int argc, char *argv[])
 				show_menu();
 				break;
 		}
-		while(getchar() != '\n') continue;
+		clean_input();
 		printf("\n");
 		printf(INOUT_THE_CHOICE);
 	}
