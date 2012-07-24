@@ -2,13 +2,13 @@
 #include	<stdlib.h>
 #include	<string.h>
 
-#define		STR_BUG_SIZE		128
+#define		STRING_BUF_SIZE		128
 #define		INOUT_THE_CHOICE	"Please input your choise : "
 #define		clean_input()		while(getchar() != '\n') continue;
 
 typedef	struct car {
-	char		brand[STR_BUG_SIZE];
-	char		model[STR_BUG_SIZE];
+	char		brand[STRING_BUF_SIZE + 1];
+	char		model[STRING_BUF_SIZE + 1];
 	struct car	*next;
 } car;
 
@@ -34,11 +34,11 @@ int show_item(car *head) {
 car *new_item(char *brand, char *model) {
 	car	*new = (car*)malloc(sizeof(car));
 	
-	new->brand[STR_BUG_SIZE] = '\0';
-	new->model[STR_BUG_SIZE] = '\0';
+	new->brand[STRING_BUF_SIZE] = '\0';
+	new->model[STRING_BUF_SIZE] = '\0';
 
-	strncpy(new->brand, brand, STR_BUG_SIZE);
-	strncpy(new->model, model, STR_BUG_SIZE);
+	strncpy(new->brand, brand, STRING_BUF_SIZE);
+	strncpy(new->model, model, STRING_BUF_SIZE);
 	new->next = NULL;
 
 	return new;
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 {
 	char	choice;
 	car	*head = NULL, *new = NULL;
-	char	ibrand[STR_BUG_SIZE], imodel[STR_BUG_SIZE];
+	char	ibrand[STRING_BUF_SIZE + 1], imodel[STRING_BUF_SIZE + 1];
 	unsigned int	index;
 
 	show_menu();
@@ -144,8 +144,10 @@ int main(int argc, char *argv[])
 
 				printf("Input the brand : ");
 				scanf("%s", ibrand);
+				ibrand[STRING_BUF_SIZE] = '\0';
 				printf("Input the model : ");
 				scanf("%s", imodel);
+				imodel[STRING_BUF_SIZE] = '\0';
 
 				new = new_item(ibrand, imodel);
 				if (new == NULL) {
