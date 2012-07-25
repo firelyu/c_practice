@@ -77,13 +77,14 @@ void show_menu() {
 	printf("Btree menu:\n");
 	printf(" A/a - Add a node.\n");
 	printf(" S/s - Show all the node in the tree.\n");
+	printf(" L/l - Lookup the node in the tree.\n");
 	printf(" H/h/? - Show the menu.\n");
 	printf(" Q/q - Quit the menu.\n");
 }
 
 int main() {
 	char	choice;
-	car	*top, *newp;
+	car	*top, *newp, *fnode;
 	char	ibrand[STRING_BUF_SIZE + 1], icountry[STRING_BUF_SIZE + 1];
 	
 	top = NULL;
@@ -106,6 +107,19 @@ int main() {
 			case 'S':
 				if (top == NULL) printf("There is no node in the Btree.\n"); 
 				else applyinorder(top, show, NULL);
+				break;
+			case 'l':
+			case 'L':
+				clean_input();
+				printf("Input the target brand : ");
+				scanf("%s", ibrand);
+				ibrand[STRING_BUF_SIZE] = '\0';
+
+				fnode = lookup(top, ibrand);
+
+				if (fnode == NULL) printf("Can't find the node %s.\n", ibrand);
+				else show(fnode, NULL);
+
 				break;
 			case 'h':
 			case 'H':
