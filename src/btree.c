@@ -16,6 +16,7 @@ typedef struct car {
 car *newitem(char *brand, char *country);
 car *insert(car *treep, car *newp);
 car *lookup(car *treep, char *brand);
+car *nrlookup(car *treep, char *brand);
 void applyinorder(car *treep, void (*fn)(car*, void*), void *arg);
 void show(car *treep, void *arg);
 void show_menu();
@@ -61,6 +62,20 @@ car *lookup(car *treep, char *brand) {
 
 }
 
+car *nrlookup(car *treep, char *brand) {
+	int cmp;
+
+	while (treep != NULL) {
+		cmp = strcmp(brand, treep->brand);
+
+		if (cmp == 0) return treep;
+		else if (cmp < 0) treep = treep->left;
+		else treep = treep->right;
+	}
+
+	return NULL;
+}
+
 void applyinorder(car *treep, void (*fn)(car*, void*), void *arg){
 	if (treep == NULL) return;
 
@@ -93,6 +108,7 @@ int main() {
 		switch(choice) {
 			case 'a':
 			case 'A':
+				clean_input();
 				printf("Input the brand : ");
 				scanf("%s", ibrand);
 				ibrand[STRING_BUF_SIZE] = '\0';
@@ -115,7 +131,8 @@ int main() {
 				scanf("%s", ibrand);
 				ibrand[STRING_BUF_SIZE] = '\0';
 
-				fnode = lookup(top, ibrand);
+				//fnode = lookup(top, ibrand);
+				fnode = nrlookup(top, ibrand);
 
 				if (fnode == NULL) printf("Can't find the node %s.\n", ibrand);
 				else show(fnode, NULL);
