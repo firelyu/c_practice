@@ -10,8 +10,14 @@ btree: btree.c
 markov: markov.c
 	${CC} markov.c -o markov
 
+debug: markov.dbg
+
+markov.dbg: markov.c
+	${CC} markov.c -g -o markov.dbg
+
 clean:
 	${RM} -f list
 	${RM} -f btree
 	${RM} -f markov
+	${RM} -f markov.dbg
 
