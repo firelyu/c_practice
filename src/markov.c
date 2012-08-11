@@ -23,11 +23,15 @@ struct Suffix {
 	Suffix	*next;
 };
 
+State	**statetab;
+char	NONWORD[] = "\n";
+
 unsigned int hash(char *s[NPREF]);
 State* lookup(char *prefix[NPREF], int create);
 void build(char *prefix[NPREF], FILE *f);
 void add(char *prefix[NPREF], char *suffixes);
 void addsuffix(State *sp, char *suffix);
+void generate(int nwords);
 
 unsigned int hash(char *s[NPREF]) {
 	unsigned int	h;
@@ -67,7 +71,7 @@ State* lookup(char *prefix[NPREF], int create) {
 void build(char *prefix[NPREF], FILE *f) {
 	char	buf[100], fmt[10];
 
-	sprinf(fmt, "%%%ds", sizeof(buf) - 1);
+	sprintf(fmt, "%%%ds", sizeof(buf) - 1);
 	//while (fscanf(f, fmt, buf) != EOF) add(prefix, estrdup(buf);
 	while (fscanf(f, fmt, buf) != EOF) add(prefix, strdup(buf));
 }
@@ -90,4 +94,36 @@ void addsuffix(State *sp, char *suffix) {
 	suf->word = suffix;
 	suf->next = sp->suf;
 	sp->suf = suf;
+}
+
+void generate(int nwords) {
+	State	*sp;
+	Suffix	*suf;
+	char	*prefix[NPREF], *w;
+	int	i, nmatch;
+
+	for (i = 0; i < NPREF; i++) prefix[i] = NONWORD;
+
+	for (i = 0; i < nwords; i++) {
+		sp = lookup(prefix, 0);
+		nmatch = 0;
+		for (suf = sp->suf; suf != NULL; suf = suf->next)
+			if (rand() % ++nmatch == 0)
+				w = suf->word;
+		if (strcmp(w, NONWORD) == 0) break;
+		printf("%s\n", w);
+		memmove(prefix, prefix + 1, (NPREF - 1) * sizeof(prefix[0]));
+		prefix[NPREF - 1] = w;
+	}
+}
+
+int main(void) {
+	int	i, nwords = MAXGEN;
+	char	*prefix[NPREF];
+
+	for (i = 0; i < NPREF; i++) prefix[i] = NONWORD;
+	build(prefix, stdin);
+	add(prefix, NONWORD);
+	generate(nwords);
+	return 0;
 }
