@@ -1,3 +1,6 @@
+#include	<stdio.h>
+#include	<stdlib.h>
+#include	<string.h>
 
 enum {
 	NPREF =	2,
@@ -22,6 +25,9 @@ struct Suffix {
 
 unsigned int hash(char *s[NPREF]);
 State* lookup(char *prefix[NPREF], int create);
+void build(char *prefix[NPREF], FILE *f);
+void add(char *prefix[NPREF], char *suffixes);
+void addsuffix(State *sp, char *suffix);
 
 unsigned int hash(char *s[NPREF]) {
 	unsigned int	h;
@@ -42,12 +48,13 @@ State* lookup(char *prefix[NPREF], int create) {
 	h = hash(prefix);
 	for (sp = statetab[h]; sp != NULL; sp = sp->next) {
 		for (i = 0; i < NPREF; i++)
-			if (strcmp(prefix[i], sp->pref[i]) != 0) then break;
+			if (strcmp(prefix[i], sp->pref[i]) != 0) break;
 		if (i == NPREF) return sp;
 	}
 
 	if (create) {
-		sp = (State *)emalloc(sizeof(State));
+		//sp = (State *)emalloc(sizeof(State));
+		sp = (State *)malloc(sizeof(State));
 		for (i = 0; i < NPREF; i++) sp->pref[i] = prefix[i];
 		sp->suf = NULL;
 		sp->next = statetab[h];
@@ -55,4 +62,32 @@ State* lookup(char *prefix[NPREF], int create) {
 	}
 
 	return sp;
+}
+
+void build(char *prefix[NPREF], FILE *f) {
+	char	buf[100], fmt[10];
+
+	sprinf(fmt, "%%%ds", sizeof(buf) - 1);
+	//while (fscanf(f, fmt, buf) != EOF) add(prefix, estrdup(buf);
+	while (fscanf(f, fmt, buf) != EOF) add(prefix, strdup(buf));
+}
+
+void add(char *prefix[NPREF], char *suffix) {
+	State	*sp;
+
+	sp = lookup(prefix, 1);
+	addsuffix(sp, suffix);
+
+	memmove(prefix, prefix + 1, (NPREF - 1) * sizeof(prefix[0]));
+	prefix[NPREF - 1] = suffix;
+	
+}
+
+void addsuffix(State *sp, char *suffix) {
+	Suffix	*suf;
+
+	suf = (Suffix *)malloc(sizeof(Suffix));
+	suf->word = suffix;
+	suf->next = sp->suf;
+	sp->suf = suf;
 }
