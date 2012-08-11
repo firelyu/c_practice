@@ -23,7 +23,7 @@ struct Suffix {
 	Suffix	*next;
 };
 
-State	**statetab;
+State	*statetab[NHASH];
 char	NONWORD[] = "\n";
 
 unsigned int hash(char *s[NPREF]);
@@ -32,6 +32,7 @@ void build(char *prefix[NPREF], FILE *f);
 void add(char *prefix[NPREF], char *suffixes);
 void addsuffix(State *sp, char *suffix);
 void generate(int nwords);
+void usage();
 
 unsigned int hash(char *s[NPREF]) {
 	unsigned int	h;
@@ -39,7 +40,7 @@ unsigned int hash(char *s[NPREF]) {
 	int		i;
 
 	for (i = 0; i < NPREF; i++)
-		for (p = (unsigned char *)s[i]; p != '\0'; p++)
+		for (p = (unsigned char *)s[i]; *p != '\0'; p++)
 			h = MULTIPIER * h + *p;
 	
 	return h % NHASH;
@@ -71,7 +72,7 @@ State* lookup(char *prefix[NPREF], int create) {
 void build(char *prefix[NPREF], FILE *f) {
 	char	buf[100], fmt[10];
 
-	sprintf(fmt, "%%%ds", sizeof(buf) - 1);
+	sprintf(fmt, "%%%lds", sizeof(buf) - 1);
 	//while (fscanf(f, fmt, buf) != EOF) add(prefix, estrdup(buf);
 	while (fscanf(f, fmt, buf) != EOF) add(prefix, strdup(buf));
 }
@@ -117,13 +118,37 @@ void generate(int nwords) {
 	}
 }
 
-int main(void) {
+void usage() {
+	printf("Usage:\n");
+	printf("	markov <filename>\n");
+	printf("<filename> - The filename contain the plain text.\n");
+}
+
+int main(int argc, char	*argv[]) {
 	int	i, nwords = MAXGEN;
-	char	*prefix[NPREF];
+	char	*prefix[NPREF], *filename;
+	FILE	*fh;
+
+	if (argc < 2) {
+		usage();
+		return 1;
+	}
+	
+	filename = argv[1];
+	fh = fopen(filename, "r");
+	if (fh == NULL) {
+		perror("Open file");
+		return 1;
+	}
 
 	for (i = 0; i < NPREF; i++) prefix[i] = NONWORD;
-	build(prefix, stdin);
+	build(prefix, fh);
 	add(prefix, NONWORD);
 	generate(nwords);
+
+	if (fclose(fh) != 0 ) {
+		perror("Close file");
+		return 1;
+	}
 	return 0;
 }
