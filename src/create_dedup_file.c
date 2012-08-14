@@ -6,13 +6,14 @@
 #include	<fcntl.h>
 
 #define		BLK_SIZE			8 * 1024
-#define		TOTAL_BLK_NUMBER	3
+#define		TOTAL_BLK_NUMBER	10
+#define		DEDUP_RATE			30
 
 typedef	struct Block_Data Block_Data;
 
 struct Block_Data {
 	char	*base_blk;	//BLK_SIZE - 1
-	char	*delta;		// The length is 1
+	char	delta;		// The length is 1
 };
 
 void usage();
@@ -41,7 +42,7 @@ int write_to_file(int fd, Block_Data *blk) {
 		return 1;
 	}
 
-	wnumber = write(fd, blk->delta, 1);
+	wnumber = write(fd, &blk->delta, 1);
 	if (wnumber != 1) {
 		perror("Write delta block data");
 		return -1;
@@ -51,22 +52,24 @@ int write_to_file(int fd, Block_Data *blk) {
 }
 
 int main(int argc, char *argv[]) {
-	char	base_block_data[BLK_SIZE - 1], delta_list[TOTAL_BLK_NUMBER];;
+	char	base_block_data[BLK_SIZE - 1];
 	char	*filename;
 	int		fd, i;
-	Block_Data	*basebd;
+	int		base_blk_count, diff_blk_count;
+	Block_Data	*basebd, *diffbd;
 
 	if (argc < 2) {
 		usage();
 		exit(-1);
 	}
 	
+	basebd = (Block_Data *)malloc(sizeof(Block_Data));
+	diffbd = (Block_Data *)malloc(sizeof(Block_Data));
+	
 	// Create the base block data.
 	fill_blk(base_block_data, BLK_SIZE - 1);
-	for (i = 0; i < TOTAL_BLK_NUMBER + 1; i++) delta_list[i] = 'a' + 1;
-	basebd = (Block_Data *)malloc(sizeof(Block_Data));
 	basebd->base_blk = base_block_data;
-	basebd->delta = &delta_list[0];
+	basebd->delta = '0';
 
 	filename = argv[1];
 	// Always create new file.
@@ -76,13 +79,24 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	// Write the to the file.
-	for (i = 0; i < TOTAL_BLK_NUMBER; i++) {
+	// Write the same blocks to the file.
+	base_blk_count = TOTAL_BLK_NUMBER * DEDUP_RATE / 100;
+	for (i = 0; i < base_blk_count; i++) {
 		if (write_to_file(fd, basebd) != 0) goto end;
 	}
 
+	// Write the different blocks to the file.
+	diff_blk_count = TOTAL_BLK_NUMBER - base_blk_count;
+	for (i = 0; i < diff_blk_count; i++) {
+		diffbd->base_blk = base_block_data;
+		do {
+			diffbd->delta = rand() % 256;
+		} while (diffbd->delta == '0');
+		if (write_to_file(fd, diffbd) != 0 ) goto end;
+	}
 end:
 	free(basebd);
+	free(diffbd);
 	close(fd);
 	
 	return 0;
