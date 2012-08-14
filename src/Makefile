@@ -12,7 +12,7 @@ markov: markov.c
 create_dedup_file: create_dedup_file.c
 	${CC} create_dedup_file.c -o create_dedup_file
 create_dedup_file2: create_dedup_file2.c
-	${CC} create_dedup_file2.c -o create_dedup_file2
+	${CC} create_dedup_file2.c -o create_dedup_file2 -lssl
 
 debug: markov.dbg create_dedup_file.dbg create_dedup_file2.dbg
 
@@ -21,7 +21,7 @@ markov.dbg: markov.c
 create_dedup_file.dbg: create_dedup_file.c
 	${CC} create_dedup_file.c -g -o create_dedup_file.dbg
 create_dedup_file2.dbg: create_dedup_file2.c
-	${CC} create_dedup_file2.c -g -o create_dedup_file2.dbg
+	${CC} create_dedup_file2.c -g -o create_dedup_file2.dbg -lssl
 
 clean:
 	${RM} list
