@@ -71,6 +71,7 @@ int write_rand_cont(int fd, Block_Content *blk) {
 		return 1;
 	}
 	
+	srandom(random());
 	if (setstate(blk->p_delta_blk_cont) == NULL) {
 		perror("setstate()");
 		return 2;
@@ -100,7 +101,7 @@ int calculate_md5(Block_Content *blk) {
 	MD5_Final(md5val, &md5_content);
 
 	printf("The md5 check sum is :\n");
-	for (i = 0; i < 16; i++) printf("%u", (unsigned int) md5val[i]);
+	for (i = 0; i < 16; i++) printf("%02x", (unsigned int) md5val[i]);
 	printf("\n");
 
 	return 0;
