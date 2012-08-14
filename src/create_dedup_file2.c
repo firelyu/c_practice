@@ -4,10 +4,11 @@
 #include	<sys/stat.h>
 #include	<fcntl.h>
 #include	<unistd.h>
+#include	<openssl/md5.h>
 
 #define		BLK_SIZE			8192	// The block size is 8KB
 #define		BASE_BLK_SIZE		7168	// The 7K are the same
-#define		TOTAL_BLK_COUNT		100
+#define		TOTAL_BLK_COUNT		10
 #define		DEDUP_RATE			30
 #define		SAME_BLK_COUNT		(TOTAL_BLK_COUNT * DEDUP_RATE / 100 + 1)
 #define		DIFF_BLK_COUNT		(TOTAL_BLK_COUNT - SAME_BLK_COUNT)
@@ -25,6 +26,7 @@ typedef struct Block_Content Block_Content;
 void usage();
 int write_same_cont(int fd, Block_Content *blk);
 int write_rand_cont(int fd, Block_Content *blk);
+int calculate_md5(Block_Content *blk);
 
 void usage() {
 	printf("Usage\n");
@@ -39,19 +41,20 @@ void usage() {
  */
 int write_same_cont(int fd, Block_Content *blk) {
 	int		wnumber;
-	
+
 	wnumber = write(fd, blk->p_base_blk_cont, blk->base_blk_size);
 	if (wnumber != blk->base_blk_size) {
 		perror("write_same_cont() write base content.");
 		return 1;
 	}
-	
 	wnumber = write(fd, blk->p_delta_blk_cont, blk->delta_blk_size);
 	if (wnumber != blk->delta_blk_size) {
 		perror("write_same_cont() write delta content.");
 		return 1;
 	}
 
+	calculate_md5(blk);
+	
 	return 0;
 }
 
@@ -61,7 +64,7 @@ int write_same_cont(int fd, Block_Content *blk) {
  */
 int write_rand_cont(int fd, Block_Content *blk) {
 	int		wnumber;
-	
+
 	wnumber = write(fd, blk->p_base_blk_cont, blk->base_blk_size);
 	if (wnumber != blk->base_blk_size) {
 		perror("write_rand_cont() write base content.");
@@ -72,12 +75,33 @@ int write_rand_cont(int fd, Block_Content *blk) {
 		perror("setstate()");
 		return 2;
 	}
-
 	wnumber = write(fd, blk->p_delta_blk_cont, blk->delta_blk_size);
 	if (wnumber != blk->delta_blk_size) {
 		perror("write_rand_cont() write delta content.");
 		return 1;
 	}
+
+	calculate_md5(blk);
+	
+	return 0;
+}
+
+/*
+ * calculate_md5 calculate the md5 sum of the Block_Content.
+ */
+int calculate_md5(Block_Content *blk) {
+	MD5_CTX			md5_content;
+	unsigned char	md5val[16];
+	int				i;
+
+	MD5_Init(&md5_content);
+	MD5_Update(&md5_content, blk->p_base_blk_cont, blk->base_blk_size);
+	MD5_Update(&md5_content, blk->p_delta_blk_cont, blk->delta_blk_size);
+	MD5_Final(md5val, &md5_content);
+
+	printf("The md5 check sum is :\n");
+	for (i = 0; i < 16; i++) printf("%u", (unsigned int) md5val[i]);
+	printf("\n");
 
 	return 0;
 }
@@ -86,7 +110,7 @@ int main(int argc, char *argv[]) {
 	char			base_blk_cont[BASE_BLK_SIZE], delta_blk_cont[BLK_SIZE - BASE_BLK_SIZE];
 	char			*file_name;
 	int				fd, i;
-	Block_Content	*p_same_blk, *p_delta_blk;
+	Block_Content	*p_blk_cont;
 
 	if (argc < 2) {
 		usage();
@@ -106,21 +130,25 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 	
-	p_same_blk->base_blk_size = BASE_BLK_SIZE;
-	p_same_blk->delta_blk_size = BLK_SIZE - BASE_BLK_SIZE;
-	p_same_blk->p_base_blk_cont = base_blk_cont;
-	p_same_blk->p_delta_blk_cont = delta_blk_cont;
-
+	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
+	p_blk_cont->base_blk_size = BASE_BLK_SIZE;
+	p_blk_cont->delta_blk_size = BLK_SIZE - BASE_BLK_SIZE;
+	p_blk_cont->p_base_blk_cont = base_blk_cont;
+	p_blk_cont->p_delta_blk_cont = delta_blk_cont;
+	
 	for (i = 0; i < SAME_BLK_COUNT; i++)
-		if (write_same_cont(fd, p_same_blk) != 0) exit(-1);
+		if (write_same_cont(fd, p_blk_cont) != 0) exit(-1);
+	
+	for (i = 0; i < 1024; i++) p_blk_cont->p_base_blk_cont[i]++;
 
 	for (i = 0; i < DIFF_BLK_COUNT; i++)
-		if (write_rand_cont(fd, p_same_blk) != 0) exit(-1);
+		if (write_rand_cont(fd, p_blk_cont) != 0) exit(-1);
 
 	if (close(fd) != 0) {
 		perror("Close file");
 		exit(-1);
 	}
-
+	
+	free(p_blk_cont);
 	return 0;
 }
