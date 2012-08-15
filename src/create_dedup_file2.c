@@ -13,6 +13,7 @@
 #define		SAME_BLK_COUNT		(TOTAL_BLK_COUNT * DEDUP_RATE / 100 + 1)
 #define		DIFF_BLK_COUNT		(TOTAL_BLK_COUNT - SAME_BLK_COUNT)
 #define		UNIQUE_BLK_COUNT	(DIFF_BLK_COUNT + 1)
+#define		FIND_EMPTY_RETRY	10
 
 struct Block_Content {
 	unsigned int	base_blk_size;
@@ -113,7 +114,7 @@ int generate_1(int fd) {
 	Block_Content	*p_blk_cont;
 	int				i;
 	
-	for (i =0; i < BASE_BLK_SIZE; i++) base_blk_cont[i] = i + 1;
+	for (i = 0; i < BASE_BLK_SIZE; i++) base_blk_cont[i] = i + 1;
 	if (initstate(0, delta_blk_cont, sizeof(delta_blk_cont)) == NULL) {
 		perror("initstate()");
 		exit(-1);
@@ -137,6 +138,58 @@ int generate_1(int fd) {
 	return 0;
 }
 
+/*
+ * generate_2() use a bitmap to trace writing block data.
+ * Randomly select the location of the same block.
+ */
+int generate_2(int fd) {
+	unsigned int	bitmap[TOTAL_BLK_COUNT];
+	char			base_blk_cont[BASE_BLK_SIZE], delta_blk_cont[BLK_SIZE - BASE_BLK_SIZE];
+	Block_Content	*p_blk_cont;
+	unsigned int	i, pos, retry;
+
+	for (i = 0; i < TOTAL_BLK_COUNT; i++) bitmap[i] = 0; 
+	for (i = 0; i < BASE_BLK_SIZE; i++) base_blk_cont[i] = i + 1;
+	if (initstate(0, delta_blk_cont, sizeof(delta_blk_cont)) == NULL) {
+		perror("initstate()");
+		exit(-1);
+	}
+
+	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
+	p_blk_cont->base_blk_size = BASE_BLK_SIZE;
+	p_blk_cont->delta_blk_size = BLK_SIZE - BASE_BLK_SIZE;
+	p_blk_cont->p_base_blk_cont = base_blk_cont;
+	p_blk_cont->p_delta_blk_cont = delta_blk_cont;
+
+	// Write the same block content.
+	for (i = 0; i < SAME_BLK_COUNT; i++) {
+		retry = 0;
+		do {
+			pos = rand() % TOTAL_BLK_COUNT;
+			retry++;
+		} while (bitmap[pos] == 1 && retry < FIND_EMPTY_RETRY);
+
+		if (retry == FIND_EMPTY_RETRY) {
+			printf("Can't find empty block in bitmap after %u retry.\n", retry);
+			return 1;
+		}
+
+		if (lseek(fd, pos * BLK_SIZE, SEEK_SET) == -1) {
+			perror("lseek()");
+			return 1;
+		}
+		if (write_same_cont(fd, p_blk_cont) != 0) return 1;
+		bitmap[pos] = 1;
+	}
+	
+	printf("The bitmap:\n");
+	for (i = 0; i < TOTAL_BLK_COUNT; i++)
+		if (bitmap[i] != 0) printf("[%u] : %u\n", i, bitmap[i]);
+	// Write the diff block content.
+
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
 	char		*file_name;
 	int			fd;
@@ -153,7 +206,8 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 	
-	generate_1(fd);
+	//generate_1(fd);
+	generate_2(fd);
 
 	if (close(fd) != 0) {
 		perror("Close file");
