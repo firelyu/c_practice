@@ -13,6 +13,8 @@ create_dedup_file: create_dedup_file.c
 	${CC} create_dedup_file.c -o create_dedup_file
 create_dedup_file2: create_dedup_file2.c
 	${CC} create_dedup_file2.c -o create_dedup_file2 -lssl
+	# For Mac OS
+	#${CC} create_dedup_file2.c -o create_dedup_file2 -lcrypto
 
 debug: markov.dbg create_dedup_file.dbg create_dedup_file2.dbg
 
