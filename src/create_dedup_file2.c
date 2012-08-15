@@ -27,6 +27,7 @@ void usage();
 int write_same_cont(int fd, Block_Content *blk);
 int write_rand_cont(int fd, Block_Content *blk);
 int calculate_md5(Block_Content *blk);
+int generate_1(int fd);
 
 void usage() {
 	printf("Usage\n");
@@ -107,11 +108,38 @@ int calculate_md5(Block_Content *blk) {
 	return 0;
 }
 
-int main(int argc, char *argv[]) {
+int generate_1(int fd) {
 	char			base_blk_cont[BASE_BLK_SIZE], delta_blk_cont[BLK_SIZE - BASE_BLK_SIZE];
-	char			*file_name;
-	int				fd, i;
 	Block_Content	*p_blk_cont;
+	int				i;
+	
+	for (i =0; i < BASE_BLK_SIZE; i++) base_blk_cont[i] = i + 1;
+	if (initstate(0, delta_blk_cont, sizeof(delta_blk_cont)) == NULL) {
+		perror("initstate()");
+		exit(-1);
+	}
+
+	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
+	p_blk_cont->base_blk_size = BASE_BLK_SIZE;
+	p_blk_cont->delta_blk_size = BLK_SIZE - BASE_BLK_SIZE;
+	p_blk_cont->p_base_blk_cont = base_blk_cont;
+	p_blk_cont->p_delta_blk_cont = delta_blk_cont;
+	
+	for (i = 0; i < SAME_BLK_COUNT; i++)
+		if (write_same_cont(fd, p_blk_cont) != 0) exit(-1);
+	for (i = 0; i < 1024; i++) p_blk_cont->p_base_blk_cont[i]++;
+
+	for (i = 0; i < DIFF_BLK_COUNT; i++)
+		if (write_rand_cont(fd, p_blk_cont) != 0) exit(-1);
+	
+	free(p_blk_cont);
+
+	return 0;
+}
+
+int main(int argc, char *argv[]) {
+	char		*file_name;
+	int			fd;
 
 	if (argc < 2) {
 		usage();
@@ -124,32 +152,13 @@ int main(int argc, char *argv[]) {
 		perror("Open file");
 		exit(-1);
 	}
-
-	for (i =0; i < BASE_BLK_SIZE; i++) base_blk_cont[i] = i + 1;
-	if (initstate(0, delta_blk_cont, sizeof(delta_blk_cont)) == NULL) {
-		perror("initstate()");
-		exit(-1);
-	}
 	
-	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
-	p_blk_cont->base_blk_size = BASE_BLK_SIZE;
-	p_blk_cont->delta_blk_size = BLK_SIZE - BASE_BLK_SIZE;
-	p_blk_cont->p_base_blk_cont = base_blk_cont;
-	p_blk_cont->p_delta_blk_cont = delta_blk_cont;
-	
-	for (i = 0; i < SAME_BLK_COUNT; i++)
-		if (write_same_cont(fd, p_blk_cont) != 0) exit(-1);
-	
-	for (i = 0; i < 1024; i++) p_blk_cont->p_base_blk_cont[i]++;
-
-	for (i = 0; i < DIFF_BLK_COUNT; i++)
-		if (write_rand_cont(fd, p_blk_cont) != 0) exit(-1);
+	generate_1(fd);
 
 	if (close(fd) != 0) {
 		perror("Close file");
 		exit(-1);
 	}
 	
-	free(p_blk_cont);
 	return 0;
 }
