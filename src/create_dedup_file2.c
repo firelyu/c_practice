@@ -165,9 +165,10 @@ int generate_2(int fd) {
 	for (i = 0; i < SAME_BLK_COUNT; i++) {
 		retry = 0;
 		do {
+			srand(retry);
 			pos = rand() % TOTAL_BLK_COUNT;
 			retry++;
-		} while (bitmap[pos] == 1 && retry < FIND_EMPTY_RETRY);
+		} while (bitmap[pos] != 0 && retry < FIND_EMPTY_RETRY);
 
 		if (retry == FIND_EMPTY_RETRY) {
 			printf("Can't find empty block in bitmap after %u retry.\n", retry);
@@ -182,11 +183,22 @@ int generate_2(int fd) {
 		bitmap[pos] = 1;
 	}
 	
-	printf("The bitmap:\n");
+	printf("The bitmap of the same block:\n");
 	for (i = 0; i < TOTAL_BLK_COUNT; i++)
-		if (bitmap[i] != 0) printf("[%u] : %u\n", i, bitmap[i]);
+		if (bitmap[i] == 1) printf("[%u] : %u\n", i, bitmap[i]);
+	
 	// Write the diff block content.
+	for (i = 0; i < TOTAL_BLK_COUNT; i++) {
+		if (bitmap[i] == 0) {
+			if (write_rand_cont(fd, p_blk_cont) != 0) return 1;
+			bitmap[i] = 2;
+		}
+	}
 
+	printf("The bitmap of the random block:\n");
+	for (i = 0; i < TOTAL_BLK_COUNT; i++)
+		if (bitmap[i] == 2) printf("[%u] : %u\n", i, bitmap[i]);
+	
 	return 0;
 }
 
