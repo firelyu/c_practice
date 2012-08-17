@@ -24,11 +24,17 @@ struct Block_Content {
 
 typedef struct Block_Content Block_Content;
 
+unsigned int	bitmap[TOTAL_BLK_COUNT];
+char			block_buf[BLK_SIZE];
+
 void usage();
 int write_same_cont(int fd, Block_Content *blk);
 int write_rand_cont(int fd, Block_Content *blk);
 int calculate_md5(Block_Content *blk);
-int generate_1(int fd);
+int generate_simple(int fd);
+int generate_random(int fd);
+int read_file(int fd);
+int print_bitmap(unsigned int *bitmap, size_t size);
 
 void usage() {
 	printf("Usage\n");
@@ -44,6 +50,7 @@ void usage() {
 int write_same_cont(int fd, Block_Content *blk) {
 	int		wnumber;
 
+printf("addr of blk : %p\n", blk);
 	wnumber = write(fd, blk->p_base_blk_cont, blk->base_blk_size);
 	if (wnumber != blk->base_blk_size) {
 		perror("write_same_cont() write base content.");
@@ -66,7 +73,7 @@ int write_same_cont(int fd, Block_Content *blk) {
  */
 int write_rand_cont(int fd, Block_Content *blk) {
 	int		wnumber;
-
+printf("addr of blk : %p\n", blk);
 	wnumber = write(fd, blk->p_base_blk_cont, blk->base_blk_size);
 	if (wnumber != blk->base_blk_size) {
 		perror("write_rand_cont() write base content.");
@@ -102,16 +109,16 @@ int calculate_md5(Block_Content *blk) {
 	MD5_Update(&md5_content, blk->p_delta_blk_cont, blk->delta_blk_size);
 	MD5_Final(md5val, &md5_content);
 
-	printf("The md5 check sum is :\n");
+	//printf("The md5 check sum is :\n");
 	for (i = 0; i < 16; i++) printf("%02x", (unsigned int) md5val[i]);
 	printf("\n");
 
 	return 0;
 }
 
-int generate_1(int fd) {
+int generate_simple(int fd) {
 	char			base_blk_cont[BASE_BLK_SIZE], delta_blk_cont[BLK_SIZE - BASE_BLK_SIZE];
-	Block_Content	*p_blk_cont;
+	Block_Content	one_blk_cont, *p_blk_cont;
 	int				i;
 	
 	for (i = 0; i < BASE_BLK_SIZE; i++) base_blk_cont[i] = i + 1;
@@ -120,7 +127,7 @@ int generate_1(int fd) {
 		exit(-1);
 	}
 
-	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
+	p_blk_cont = &one_blk_cont;
 	p_blk_cont->base_blk_size = BASE_BLK_SIZE;
 	p_blk_cont->delta_blk_size = BLK_SIZE - BASE_BLK_SIZE;
 	p_blk_cont->p_base_blk_cont = base_blk_cont;
@@ -133,19 +140,16 @@ int generate_1(int fd) {
 	for (i = 0; i < DIFF_BLK_COUNT; i++)
 		if (write_rand_cont(fd, p_blk_cont) != 0) exit(-1);
 	
-	free(p_blk_cont);
-
 	return 0;
 }
 
 /*
- * generate_2() use a bitmap to trace writing block data.
+ * generate_random() use a bitmap to trace writing block data.
  * Randomly select the location of the same block.
  */
-int generate_2(int fd) {
-	unsigned int	bitmap[TOTAL_BLK_COUNT];
+int generate_random(int fd) {
 	char			base_blk_cont[BASE_BLK_SIZE], delta_blk_cont[BLK_SIZE - BASE_BLK_SIZE];
-	Block_Content	*p_blk_cont;
+	Block_Content	one_blk_cont, *p_blk_cont;
 	unsigned int	i, pos, retry;
 
 	for (i = 0; i < TOTAL_BLK_COUNT; i++) bitmap[i] = 0; 
@@ -157,13 +161,14 @@ int generate_2(int fd) {
 		exit(-1);
 	}
 
-	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
+	p_blk_cont = &one_blk_cont;
 	p_blk_cont->base_blk_size = BASE_BLK_SIZE;
 	p_blk_cont->delta_blk_size = BLK_SIZE - BASE_BLK_SIZE;
 	p_blk_cont->p_base_blk_cont = base_blk_cont;
 	p_blk_cont->p_delta_blk_cont = delta_blk_cont;
 
 	// Write the same block content.
+	printf("write_same_cont()\n");
 	for (i = 0; i < SAME_BLK_COUNT; i++) {
 		retry = 0;
 		do {
@@ -185,23 +190,54 @@ int generate_2(int fd) {
 		bitmap[pos] = 1;
 	}
 	
-	printf("The bitmap of the same block:\n");
-	for (i = 0; i < TOTAL_BLK_COUNT; i++)
-		if (bitmap[i] == 1) printf("[%u] : %u\n", i, bitmap[i]);
-	
 	// Write the diff block content.
+	printf("write_rand_cont()\n");
 	for (i = 0; i < TOTAL_BLK_COUNT; i++) {
 		if (bitmap[i] == 0) {
+			if (lseek(fd, i * BLK_SIZE, SEEK_SET) == -1) {
+				perror("lseek()");
+				return 1;
+			}
 			if (write_rand_cont(fd, p_blk_cont) != 0) return 1;
 			bitmap[i] = 2;
 		}
 	}
-
-	printf("The bitmap of the random block:\n");
-	for (i = 0; i < TOTAL_BLK_COUNT; i++)
-		if (bitmap[i] == 2) printf("[%u] : %u\n", i, bitmap[i]);
 	
 	return 0;
+}
+
+int read_file(int fd) {
+	int				rnumber, bnumber, i;
+	unsigned char	md5val[16];
+	
+	bnumber = 0;
+	while ((rnumber = read(fd, block_buf, BLK_SIZE)) > 0) {
+		/*
+		if (rnumber != BLK_SIZE) {
+		}
+		else {
+		}
+		*/
+		MD5(block_buf, rnumber, md5val);
+		printf("[%8d] : ", bnumber);
+		for (i = 0; i < 16; i++) printf("%02x", (unsigned int) md5val[i]);
+		printf("\n");
+		bnumber++;
+	}
+
+	if (rnumber == -1) {
+		perror("Read file");
+		exit(-1);
+	}
+
+	return 0;
+}
+
+int print_bitmap(unsigned int *bitmap, size_t size) {
+	unsigned int	i;
+
+	printf("The bitmap of the random block:\n");
+	for (i = 0; i < size; i++) printf("bitmap[%u] : %u\n", i, bitmap[i]);
 }
 
 int main(int argc, char *argv[]) {
@@ -214,14 +250,17 @@ int main(int argc, char *argv[]) {
 	};
 
 	file_name = argv[1];
-	fd = open(file_name, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	fd = open(file_name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1) {
 		perror("Open file");
 		exit(-1);
 	}
 	
-	//generate_1(fd);
-	generate_2(fd);
+	//generate_simple(fd);
+	generate_random(fd);
+	print_bitmap(bitmap, TOTAL_BLK_COUNT);
+	lseek(fd, 0, SEEK_SET);
+	read_file(fd);
 
 	if (close(fd) != 0) {
 		perror("Close file");
