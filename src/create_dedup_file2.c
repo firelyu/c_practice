@@ -149,6 +149,8 @@ int generate_2(int fd) {
 	unsigned int	i, pos, retry;
 
 	for (i = 0; i < TOTAL_BLK_COUNT; i++) bitmap[i] = 0; 
+	// char is 1B, unsigned int is 4B. Here is a cast from unsigned int
+	// to char.
 	for (i = 0; i < BASE_BLK_SIZE; i++) base_blk_cont[i] = i + 1;
 	if (initstate(0, delta_blk_cont, sizeof(delta_blk_cont)) == NULL) {
 		perror("initstate()");
