@@ -14,6 +14,7 @@
 #define		DIFF_BLK_COUNT		(TOTAL_BLK_COUNT - SAME_BLK_COUNT)
 #define		UNIQUE_BLK_COUNT	(DIFF_BLK_COUNT + 1)
 #define		FIND_EMPTY_RETRY	10
+#define		MD5_BLEN			16
 
 struct Block_Content {
 	unsigned int	base_blk_size;
@@ -30,7 +31,8 @@ char			block_buf[BLK_SIZE];
 void usage();
 int write_same_cont(int fd, Block_Content *blk);
 int write_rand_cont(int fd, Block_Content *blk);
-int calculate_md5(Block_Content *blk);
+int calculate_md5(Block_Content *blk, unsigned char *md5val);
+int print_md5(unsigned char *md5val);
 int generate_simple(int fd);
 int generate_random(int fd);
 int read_file(int fd);
@@ -49,8 +51,8 @@ void usage() {
  */
 int write_same_cont(int fd, Block_Content *blk) {
 	int		wnumber;
+	//unsigned char	md5val[MD5_BLEN];
 
-printf("addr of blk : %p\n", blk);
 	wnumber = write(fd, blk->p_base_blk_cont, blk->base_blk_size);
 	if (wnumber != blk->base_blk_size) {
 		perror("write_same_cont() write base content.");
@@ -62,7 +64,8 @@ printf("addr of blk : %p\n", blk);
 		return 1;
 	}
 
-	calculate_md5(blk);
+	//calculate_md5(blk, md5val);
+	//print_md5(md5val);
 	
 	return 0;
 }
@@ -73,7 +76,8 @@ printf("addr of blk : %p\n", blk);
  */
 int write_rand_cont(int fd, Block_Content *blk) {
 	int		wnumber;
-printf("addr of blk : %p\n", blk);
+	//unsigned char	md5val[MD5_BLEN];
+
 	wnumber = write(fd, blk->p_base_blk_cont, blk->base_blk_size);
 	if (wnumber != blk->base_blk_size) {
 		perror("write_rand_cont() write base content.");
@@ -91,7 +95,8 @@ printf("addr of blk : %p\n", blk);
 		return 1;
 	}
 
-	calculate_md5(blk);
+	//calculate_md5(blk, md5val);
+	//print_md5(md5val);
 	
 	return 0;
 }
@@ -99,9 +104,8 @@ printf("addr of blk : %p\n", blk);
 /*
  * calculate_md5 calculate the md5 sum of the Block_Content.
  */
-int calculate_md5(Block_Content *blk) {
+int calculate_md5(Block_Content *blk, unsigned char *md5val) {
 	MD5_CTX			md5_content;
-	unsigned char	md5val[16];
 	int				i;
 
 	MD5_Init(&md5_content);
@@ -109,8 +113,13 @@ int calculate_md5(Block_Content *blk) {
 	MD5_Update(&md5_content, blk->p_delta_blk_cont, blk->delta_blk_size);
 	MD5_Final(md5val, &md5_content);
 
-	//printf("The md5 check sum is :\n");
-	for (i = 0; i < 16; i++) printf("%02x", (unsigned int) md5val[i]);
+	return 0;
+}
+
+int print_md5(unsigned char *md5val) {
+	int		i;
+
+	for (i = 0; i < MD5_BLEN; i++) printf("%02x", (unsigned int) md5val[i]);
 	printf("\n");
 
 	return 0;
@@ -168,7 +177,7 @@ int generate_random(int fd) {
 	p_blk_cont->p_delta_blk_cont = delta_blk_cont;
 
 	// Write the same block content.
-	printf("write_same_cont()\n");
+	//printf("write_same_cont()\n");
 	for (i = 0; i < SAME_BLK_COUNT; i++) {
 		retry = 0;
 		do {
@@ -191,7 +200,7 @@ int generate_random(int fd) {
 	}
 	
 	// Write the diff block content.
-	printf("write_rand_cont()\n");
+	//printf("write_rand_cont()\n");
 	for (i = 0; i < TOTAL_BLK_COUNT; i++) {
 		if (bitmap[i] == 0) {
 			if (lseek(fd, i * BLK_SIZE, SEEK_SET) == -1) {
@@ -208,7 +217,7 @@ int generate_random(int fd) {
 
 int read_file(int fd) {
 	int				rnumber, bnumber, i;
-	unsigned char	md5val[16];
+	unsigned char	md5val[MD5_BLEN];
 	
 	bnumber = 0;
 	while ((rnumber = read(fd, block_buf, BLK_SIZE)) > 0) {
@@ -219,9 +228,8 @@ int read_file(int fd) {
 		}
 		*/
 		MD5(block_buf, rnumber, md5val);
-		printf("[%8d] : ", bnumber);
-		for (i = 0; i < 16; i++) printf("%02x", (unsigned int) md5val[i]);
-		printf("\n");
+		printf("Block[%4d] : ", bnumber);
+		print_md5(md5val);
 		bnumber++;
 	}
 
@@ -237,7 +245,7 @@ int print_bitmap(unsigned int *bitmap, size_t size) {
 	unsigned int	i;
 
 	printf("The bitmap of the random block:\n");
-	for (i = 0; i < size; i++) printf("bitmap[%u] : %u\n", i, bitmap[i]);
+	for (i = 0; i < size; i++) printf("bitmap[%4u] : %u\n", i, bitmap[i]);
 }
 
 int main(int argc, char *argv[]) {
