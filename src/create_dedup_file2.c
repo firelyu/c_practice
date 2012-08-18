@@ -6,26 +6,28 @@
 #include	<unistd.h>
 #include	<openssl/md5.h>
 
-#define		BLOCK_SIZE			8192	// The block size is 8KB
-#define		BASE_BLOCK_SIZE		7168	// The 7K are the same
-#define		TOTAL_BLK_COUNT		10
-#define		DEDUP_RATE			30
-#define		SAME_BLK_COUNT		(TOTAL_BLK_COUNT * DEDUP_RATE / 100 + 1)
-#define		DIFF_BLK_COUNT		(TOTAL_BLK_COUNT - SAME_BLK_COUNT)
-#define		UNIQUE_BLK_COUNT	(DIFF_BLK_COUNT + 1)
-#define		FIND_EMPTY_RETRY	10
-#define		MD5_BLEN			16
+// Macro defination
+#define		BLOCK_SIZE					8192	// The block size is 8KB
+#define		TOTAL_BLOCK_COUNT			10
+#define		DEDUP_RATE					30
+#define		SAME_BLOCK_COUNT			(TOTAL_BLOCK_COUNT * DEDUP_RATE / 100 + 1)
+#define		DIFF_BLOCK_COUNT			(TOTAL_BLOCK_COUNT - SAME_BLOCK_COUNT)
+#define		UNIQUE_BLOCK_COUNT			(DIFF_BLOCK_COUNT + 1)
+#define		FIND_POSITION_RETRYS		10
+#define		MD5_STRING_LEN				16
 
-struct Block_Content {
-	unsigned int	block_size;
-	unsigned char	*block_cont;		// The head content are the samae.
-};
-
-typedef struct Block_Content Block_Content;
-
-unsigned int		bitmap[TOTAL_BLK_COUNT];
+// Global vars defination
+unsigned int		bitmap[TOTAL_BLOCK_COUNT];
 unsigned char		block_buf[BLOCK_SIZE];
 
+// Struct defination
+struct Block_Content {
+	unsigned int	block_size;
+	unsigned char	*block_cont;
+};
+typedef struct Block_Content Block_Content;
+
+// Function declaration
 void usage();
 int write_block_cont(int fd, Block_Content *blk);
 int fill_block_cont(Block_Content *blk);
@@ -36,6 +38,7 @@ int generate_random(int fd);
 int read_file(int fd);
 int print_bitmap(unsigned int *bitmap, size_t size);
 
+// Function defination
 void usage() {
 	printf("Usage\n");
 	printf("  create_dedup_file <file_name>\n");
@@ -48,7 +51,7 @@ void usage() {
  */
 int write_block_cont(int fd, Block_Content *blk) {
 	int		wnumber;
-	//unsigned char	md5val[MD5_BLEN];
+	//unsigned char	md5val[MD5_STRING_LEN];
 
 	wnumber = write(fd, blk->block_cont, blk->block_size);
 	if (wnumber != blk->block_size) {
@@ -79,9 +82,7 @@ int fill_block_cont(Block_Content *blk) {
 
 	// Fill the first 1KB with random data.
 	seed = random();
-	if (sizeof(block_buf) > 8192) rand_len = 1024;
-	else rand_len = sizeof(block_buf) / 8;
-
+	rand_len = 1024;
 	if (initstate(seed, blk->block_cont, rand_len) == NULL) {
 		perror("initstate()");
 		exit(-1);
@@ -109,7 +110,7 @@ int calculate_md5(Block_Content *blk, unsigned char *md5val) {
 int print_md5(unsigned char *md5val) {
 	int		i;
 
-	for (i = 0; i < MD5_BLEN; i++) printf("%02x", (unsigned int) md5val[i]);
+	for (i = 0; i < MD5_STRING_LEN; i++) printf("%02x", (unsigned int) md5val[i]);
 	printf("\n");
 
 	return 0;
@@ -117,24 +118,23 @@ int print_md5(unsigned char *md5val) {
 
 /*
  * Generate the simple dedup file.
- * The heading blocks are the same.
- * The later blocks are random.
+ * The heading blocks' content are the same. The later blocks' content are random.
  */
 int generate_simple(int fd) {
 	Block_Content	*p_blk_cont;
 	int				i;
 
 	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
-	p_blk_cont->block_size = sizeof(block_buf);
+	p_blk_cont->block_size = BLOCK_SIZE;
 	p_blk_cont->block_cont = block_buf;
 	
 	fill_block_cont(p_blk_cont);
-	for (i = 0; i < SAME_BLK_COUNT; i++)
+	for (i = 0; i < SAME_BLOCK_COUNT; i++)
 		if (write_block_cont(fd, p_blk_cont) != 0) exit(-1);
 	
 	// Change the 2nd block
 	for (i = 1024; i < 1024 * 2; i++) p_blk_cont->block_cont[i]++;
-	for (i = 0; i < DIFF_BLK_COUNT; i++) {
+	for (i = 0; i < DIFF_BLOCK_COUNT; i++) {
 		fill_block_cont(p_blk_cont);
 		if (write_block_cont(fd, p_blk_cont) != 0) exit(-1);
 	}
@@ -147,30 +147,30 @@ int generate_simple(int fd) {
 /*
  * Generate random dedup file.
  * Use a bitmap to trace writing block data.
- * Randomly select the location of the same block.
+ * Randomly select the positions of the same block.
  */
 int generate_random(int fd) {
 	Block_Content	*p_blk_cont;
 	unsigned int	i, pos, retry;
 
-	for (i = 0; i < TOTAL_BLK_COUNT; i++) bitmap[i] = 0; 
+	for (i = 0; i < TOTAL_BLOCK_COUNT; i++) bitmap[i] = 0; 
 
 	p_blk_cont = (Block_Content *) malloc(sizeof(Block_Content));
-	p_blk_cont->block_size = sizeof(block_buf);
+	p_blk_cont->block_size = BLOCK_SIZE;
 	p_blk_cont->block_cont = block_buf;
 
 	// Write the same block content.
 	//printf("write_same_cont()\n");
 	fill_block_cont(p_blk_cont);
-	for (i = 0; i < SAME_BLK_COUNT; i++) {
+	for (i = 0; i < SAME_BLOCK_COUNT; i++) {
 		retry = 0;
 		do {
 			srand(retry);
-			pos = rand() % TOTAL_BLK_COUNT;
+			pos = rand() % TOTAL_BLOCK_COUNT;
 			retry++;
-		} while (bitmap[pos] != 0 && retry < FIND_EMPTY_RETRY);
+		} while (bitmap[pos] != 0 && retry < FIND_POSITION_RETRYS);
 
-		if (retry == FIND_EMPTY_RETRY) {
+		if (retry == FIND_POSITION_RETRYS) {
 			printf("Can't find empty block in bitmap after %u retry.\n", retry);
 			return 1;
 		}
@@ -185,7 +185,7 @@ int generate_random(int fd) {
 	
 	// Write the diff block content.
 	//printf("write_rand_cont()\n");
-	for (i = 0; i < TOTAL_BLK_COUNT; i++) {
+	for (i = 0; i < TOTAL_BLOCK_COUNT; i++) {
 		if (bitmap[i] == 0) {
 			fill_block_cont(p_blk_cont);
 			if (lseek(fd, i * BLOCK_SIZE, SEEK_SET) == -1) {
@@ -208,8 +208,9 @@ int generate_random(int fd) {
  */
 int read_file(int fd) {
 	int				rnumber, bnumber, i;
-	unsigned char	md5val[MD5_BLEN];
+	unsigned char	md5val[MD5_STRING_LEN];
 	
+	lseek(fd, 0, SEEK_SET);
 	bnumber = 0;
 	while ((rnumber = read(fd, block_buf, BLOCK_SIZE)) > 0) {
 		/*
@@ -255,10 +256,9 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 	
-	generate_simple(fd);
-	//generate_random(fd);
-	print_bitmap(bitmap, TOTAL_BLK_COUNT);
-	lseek(fd, 0, SEEK_SET);
+	//generate_simple(fd);
+	generate_random(fd);
+	print_bitmap(bitmap, TOTAL_BLOCK_COUNT);
 	read_file(fd);
 
 	if (close(fd) != 0) {
