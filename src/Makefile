@@ -28,11 +28,11 @@ create_dedup_file2.dbg: create_dedup_file2.c
 	${CC} create_dedup_file2.c -g -o create_dedup_file2.dbg -lcrypto
 
 clean:
-	${RM} list
-	${RM} btree
-	${RM} markov
-	${RM} markov.dbg
-	${RM} create_dedup_file
-	${RM} create_dedup_file.dbg
-	${RM} create_dedup_file2
-	${RM} create_dedup_file2.dbg
+	${RM} -f list
+	${RM} -f btree
+	${RM} -f markov
+	${RM} -f markov.dbg
+	${RM} -f create_dedup_file
+	${RM} -f create_dedup_file.dbg
+	${RM} -f create_dedup_file2
+	${RM} -f create_dedup_file2.dbg
