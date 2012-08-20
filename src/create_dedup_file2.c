@@ -272,8 +272,8 @@ int main(int argc, char *argv[]) {
 	
 	//generate_simple(fd);
 	generate_random(fd);
-	print_bitmap(bitmap, TOTAL_BLOCK_COUNT);
-	read_file(fd);
+	//print_bitmap(bitmap, TOTAL_BLOCK_COUNT);
+	//read_file(fd);
 
 	if (close(fd) != 0) {
 		perror("Close file");
