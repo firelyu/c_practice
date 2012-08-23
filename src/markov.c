@@ -33,7 +33,9 @@ State* lookup(char *prefix[NPREF], int create);
 void build(char *prefix[NPREF], FILE *f);
 void add(char *prefix[NPREF], char *suffixes);
 void addsuffix(State *sp, char *suffix);
-void generate(int nwords);
+void generate1(int nwords);
+void generate2(int nwords);
+void dump();
 void usage();
 
 unsigned int hash(char *s[NPREF]) {
@@ -100,7 +102,7 @@ void addsuffix(State *sp, char *suffix) {
     sp->suf = suf;
 }
 
-void generate(int nwords) {
+void generate1(int nwords) {
     State           *sp;
     Suffix          *suf;
     char            *prefix[NPREF], *w;
@@ -111,13 +113,59 @@ void generate(int nwords) {
     for (i = 0; i < nwords; i++) {
         sp = lookup(prefix, 0);
         nmatch = 0;
-        for (suf = sp->suf; suf != NULL; suf = suf->next)
-            if (rand() % ++nmatch == 0)
-                w = suf->word;
+        for (suf = sp->suf; suf != NULL; suf = suf->next) {
+            nmatch++;
+            if (rand() % nmatch == 0) w = suf->word;
+        }
         if (strcmp(w, NONWORD) == 0) break;
-        printf("%s\n", w);
+        printf("%s**", w);
         memmove(prefix, prefix + 1, (NPREF - 1) * sizeof(prefix[0]));
         prefix[NPREF - 1] = w;
+    }
+    printf("\n");
+}
+
+void generate2(int nwords) {
+    State           *sp;
+    Suffix          *suf;
+    char            *prefix[NPREF], *w;
+    unsigned int    i;
+
+    for (i = 0; i < NPREF; i++) prefix[i] = NONWORD;
+
+    for (i = 0; i < nwords; i++) {
+        sp = lookup(prefix, 0);
+        w = sp->suf->word;
+        if (strcmp(w, NONWORD) == 0) break;
+        printf("%s**", w);
+        memmove(prefix, prefix + 1, (NPREF - 1) * sizeof(prefix[0]));
+        prefix[NPREF - 1] = w;
+    }
+    printf("\n");
+}
+
+void dump() {
+    unsigned int    i, count;
+    State           *sp;
+    Suffix          *suf;
+
+    for (i = 0; i < NHASH; i++) {
+        count = 0;
+        for (sp = statetab[i]; sp != NULL; sp = sp->next)
+            for (suf = sp->suf; suf != NULL; suf = suf->next)
+                count++;
+
+        if (count) {
+            printf("\033[31m");
+            printf("statetab[%4u] : %u\n", i, count);
+            printf("\033[0m");
+            for (sp = statetab[i]; sp != NULL; sp = sp->next) {
+                printf("Prefix: [%s] [%s]\n", sp->pref[0], sp->pref[1]);
+                for (suf = sp->suf; suf != NULL; suf = suf->next)
+                    printf("Suffix: [%s]\n", suf->word);
+                printf("\n");
+            }
+        }
     }
 }
 
@@ -147,7 +195,10 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < NPREF; i++) prefix[i] = NONWORD;
     build(prefix, fh);
     add(prefix, NONWORD);
-    generate(nwords);
+    generate1(nwords);
+    printf("\n");
+    generate2(nwords);
+    //dump();
 
     if (fclose(fh) != 0 ) {
         perror("Close file");
