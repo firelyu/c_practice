@@ -87,7 +87,7 @@ State* lookup(char *prefix[NPREF], int create) {
     h = hash_prefix(prefix);
     for (sp = statetab[h]; sp != NULL; sp = sp->next) {
         for (i = 0; i < NPREF; i++)
-            if (strcmp(prefix[i], sp->pref[i]) != 0) break;
+            if (prefix[i] != sp->pref[i]) break;
         if (i == NPREF) return sp;
     }
 
