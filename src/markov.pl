@@ -35,7 +35,7 @@ sub generate {
         my $rand_position   = int(rand @$suffixes_ref);
         my $suffix          = $suffixes_ref->[$rand_position];
         
-        if ($suffix eq NONWORD) {last;} 
+        last if ($suffix eq NONWORD); 
         
         print "$suffix ";
         ($w1, $w2) = ($w2, $suffix);
