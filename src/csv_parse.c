@@ -6,11 +6,11 @@
 void reset() {
     free(line);
     free(sline);
-    free(field);
+    free(fields);
     line = NULL;
     sline = NULL;
-    field = NULL;
-    maxline = maxfield = nfield = 0;
+    fields = NULL;
+    maxlinesize = maxfieldsize = nfield = 0;
 }
 
 /*
@@ -33,52 +33,52 @@ static int endofline(FILE *fin, int c) {
  * advquoted: quoted field: return pointer to next separator
  */
 static char* advquoted(char *str) {
-    int     i, j;
+    unsigned int    pre, head;
 
-    for (i = j = 0; str[j] != '\0'; i++, j++) {
-        if (str[j] == '"' && str[++j] != '"') {
+    for (pre = head = 0; str[head] != '\0'; pre++, head++) {
+        if (str[head] == '"' && str[++head] != '"') {
             // copy up to next separator or '\0'
-            int k = strcspn((char *) (str + j), fieldsep);
-            memmove((char *) (str + i), (char *) (str + j), k);
-            i += k;
-            j += k;
+            size_t k = strcspn((char *) (str + head), (char *) fieldsep);
+            memmove((char *) (str + pre), (char *) (str + head), k);
+            pre += k;
+            head += k;
             break;
         }
-        str[i] = str[j];
+        str[pre] = str[head];
     }
-    str[i] = '\0';
+    str[pre] = '\0';
 
-    return str + j;
+    return str + head;
 }
 
 /*
  * splite: splite line into field.
  */
 static int splite() {
-    char    *p, **newfield;
+    char    *head, **newfield;
     char    *ptmpsep;       // Pointer to temp separator char
     int     tmpsep;         // Temp separator char
 
     nfield = 0;
     if (line[0] == '\0') return 0;
     strcpy(sline, line);
-    p = sline;
+    head = sline;
 
     do {
-        if (nfield >= maxfield) {
-            maxfield *= 2;
-            newfield = (char **) realloc(field, maxfield * sizeof(field[0]));
+        if (nfield >= maxfieldsize) {
+            maxfieldsize *= 2;
+            newfield = (char **) realloc(fields, maxfieldsize * sizeof(fields[0]));
             if (newfield == NULL) return NOMEN;
-            field = newfield;
+            fields = newfield;
         }
         
-        if (*p == '"') ptmpsep = advquoted(++p);
-        else ptmpsep = p + strcspn(p, fieldsep);   // ptmpsep point at the ','
+        if (*head == '"') ptmpsep = advquoted(++head);
+        else ptmpsep = head + strcspn(head, fieldsep);   // ptmpsep point at the ','
         tmpsep = ptmpsep[0];
         ptmpsep[0] = '\0';
-        field[nfield] = p;
+        fields[nfield] = head;
         nfield++;
-        p = ptmpsep + 1;        // point to next field
+        head = ptmpsep + 1;        // point to next field
     } while (tmpsep == ',');
     
     return nfield;
@@ -89,25 +89,25 @@ static int splite() {
  * sample input: "LU",86.25."11/4/1998","2:19PM",+4.0625
  */
 char* csvgetline(FILE *fin) {
-    int     i, one_char;
+    int     pos, one_char;
     char    *newline, *newsline;
 
     if (line == NULL) {
-        maxline = maxfield = INIT_LENGTH;
-        line = (char *) malloc(maxline * sizeof(*line));
-        sline = (char *) malloc(maxline * sizeof(*line));
-        field = (char **) malloc(maxfield * sizeof(*field));
-        if (line == NULL || sline == NULL || field == NULL) {
+        maxlinesize = maxfieldsize = INIT_LENGTH;
+        line = (char *) malloc(maxlinesize * sizeof(line[0]));
+        sline = (char *) malloc(maxlinesize * sizeof(line[0]));
+        fields = (char **) malloc(maxfieldsize * sizeof(fields[0]));
+        if (line == NULL || sline == NULL || fields == NULL) {
             reset();
             return NULL;
         }
     }
     
-    for (i = 0; (one_char = getc(fin)) != EOF && !endofline(fin, one_char); i++) {
-        if (i > maxline - 1) {
-            maxline *= 2;
-            newline = (char *) realloc(line, maxline);
-            newsline = (char *) realloc(sline, maxline);
+    for (pos = 0; (one_char = getc(fin)) != EOF && !endofline(fin, one_char); pos++) {
+        if (pos > maxlinesize - 1) {
+            maxlinesize *= 2;
+            newline = (char *) realloc(line, maxlinesize * sizeof(newline[0]));
+            newsline = (char *) realloc(sline, maxlinesize * sizeof(newsline[0]));
             if (newline == NULL || newsline == NULL) {
                 reset();
                 return NULL;
@@ -115,16 +115,16 @@ char* csvgetline(FILE *fin) {
             line = newline;
             sline = newsline;
         }
-        line[i] = one_char;
+        line[pos] = one_char;
     }
-    line[i] = '\0';
+    line[pos] = '\0';
 
     if (splite() == NOMEN) {
         reset();
         return NULL;
     }
 
-    return (one_char == EOF && i == 0) ? NULL : line;
+    return (one_char == EOF && pos == 0) ? NULL : line;
 }
 
 /*
@@ -133,11 +133,11 @@ char* csvgetline(FILE *fin) {
 char* csvfield(int n) {
     if (n < 0 || n >= nfield) return NULL;
     
-    return field[n];
+    return fields[n];
 }
 
 /*
- * csvnfield: return number of fields
+ * csvnfield: return number of field
  */
 int csvnfield() {
     return nfield;
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
     while ((line = csvgetline(fh)) != NULL) {
         printf("line = '%s'\n", line);
         for (i = 0; i < csvnfield(); i++)
-            printf("field[%d] = '%s'\n", i, csvfield(i));
+            printf("fields[%d] = '%s'\n", i, csvfield(i));
     }
     
     if (fclose(fh) != 0) {
