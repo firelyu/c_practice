@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		B93EBD13171EB82100EF2B2D /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B93EBD12171EB82100EF2B2D /* main.c */; };
 		B93EBD15171EB82100EF2B2D /* WordFrequencies.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = B93EBD14171EB82100EF2B2D /* WordFrequencies.1 */; };
+		B9CF3B3B171EB98F00D8CAAF /* getword.c in Sources */ = {isa = PBXBuildFile; fileRef = B9CF3B36171EB98F00D8CAAF /* getword.c */; };
+		B9CF3B3C171EB98F00D8CAAF /* table.c in Sources */ = {isa = PBXBuildFile; fileRef = B9CF3B38171EB98F00D8CAAF /* table.c */; };
+		B9CF3B3D171EB98F00D8CAAF /* word_frequencies.c in Sources */ = {isa = PBXBuildFile; fileRef = B9CF3B3A171EB98F00D8CAAF /* word_frequencies.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +31,11 @@
 		B93EBD0F171EB82100EF2B2D /* WordFrequencies */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = WordFrequencies; sourceTree = BUILT_PRODUCTS_DIR; };
 		B93EBD12171EB82100EF2B2D /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		B93EBD14171EB82100EF2B2D /* WordFrequencies.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = WordFrequencies.1; sourceTree = "<group>"; };
+		B9CF3B36171EB98F00D8CAAF /* getword.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = getword.c; sourceTree = "<group>"; };
+		B9CF3B37171EB98F00D8CAAF /* getword.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = getword.h; sourceTree = "<group>"; };
+		B9CF3B38171EB98F00D8CAAF /* table.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = table.c; sourceTree = "<group>"; };
+		B9CF3B39171EB98F00D8CAAF /* table.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = table.h; sourceTree = "<group>"; };
+		B9CF3B3A171EB98F00D8CAAF /* word_frequencies.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = word_frequencies.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,10 +68,23 @@
 		B93EBD11171EB82100EF2B2D /* WordFrequencies */ = {
 			isa = PBXGroup;
 			children = (
+				B9CF3B3E171EB99B00D8CAAF /* src */,
 				B93EBD12171EB82100EF2B2D /* main.c */,
 				B93EBD14171EB82100EF2B2D /* WordFrequencies.1 */,
 			);
 			path = WordFrequencies;
+			sourceTree = "<group>";
+		};
+		B9CF3B3E171EB99B00D8CAAF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				B9CF3B36171EB98F00D8CAAF /* getword.c */,
+				B9CF3B37171EB98F00D8CAAF /* getword.h */,
+				B9CF3B38171EB98F00D8CAAF /* table.c */,
+				B9CF3B39171EB98F00D8CAAF /* table.h */,
+				B9CF3B3A171EB98F00D8CAAF /* word_frequencies.c */,
+			);
+			name = src;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -118,6 +139,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				B93EBD13171EB82100EF2B2D /* main.c in Sources */,
+				B9CF3B3B171EB98F00D8CAAF /* getword.c in Sources */,
+				B9CF3B3C171EB98F00D8CAAF /* table.c in Sources */,
+				B9CF3B3D171EB98F00D8CAAF /* word_frequencies.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,6 +240,7 @@
 				B93EBD1A171EB82100EF2B2D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

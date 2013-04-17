@@ -31,7 +31,7 @@ void wf(char *filename, FILE *fp) {
     Table_T table = Table_new(0, NULL, NULL);
     char buf[128];
     
-    while (getword(fp, buf, sizeof(buf), first, rest) {
+    while (getword(fp, buf, sizeof(buf), first, rest)) {
         int i, *count;
         const char *word;
         
@@ -57,7 +57,7 @@ void wf(char *filename, FILE *fp) {
         void **array = Table_toArray(table, NULL);
         qsort(array, Table_length(table), 2 * sizeof(*array), compare);
         for (i = 0; array[i] != NULL; i += 2) {
-            printf("%d\t%s\n", *array[i], *array[i + 1]);
+            printf("%d\t%s\n", *(int *)array[i], *(char *)array[i + 1]);
         }
         FREE(array);
     }
@@ -71,7 +71,7 @@ void wf(char *filename, FILE *fp) {
 int main(int argc, char *argv[]) {
     int i;
     
-    for (i = 1; i < argc, i++) {
+    for (i = 1; i < argc; i++) {
         FILE *fp = fopen(argv[i], 'r');
         if (fp == NULL) {
             fprintf(stderr, "%s: Can't open '%s' (%s)\n",

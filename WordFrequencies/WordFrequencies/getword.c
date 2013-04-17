@@ -10,19 +10,19 @@ extern int getword(FILE *fp, char *buf, int size,
     
     assert(fp && buf && size > 0 && first && rest);
     c = getc(fp);
-    for (; c != EOF; c = getc(fp) {
+    for (; c != EOF; c = getc(fp)) {
         if (first(c)) {
             // Store the fisrt char in buf
             if (i < size - 1) {
                 buf[i++] = c;
             }
-            c = getc(fp)
+            c = getc(fp);
             break;
         }
     }
     
     // Store the rest char
-    for (; c != EOF && rest(c); c = getc(fp) {
+    for (; c != EOF && rest(c); c = getc(fp)) {
         if (i < size - 1) {
             buf[i++] = c;
         }
@@ -32,7 +32,7 @@ extern int getword(FILE *fp, char *buf, int size,
         buf[i] = '\0';
     else
         buf[size - 1] = '\0';
-    if (c != EOF) unget(c, fp);
+    if (c != EOF) ungetc(c, fp);
     
     return i > 0;
 }
