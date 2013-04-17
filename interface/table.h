@@ -3,8 +3,6 @@
 
 #define T Table_T
 typedef struct T *T;
-struct T{
-};
 
 extern T Table_new(int hint,
     int cmp(const void *x, const void *y),

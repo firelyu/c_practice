@@ -5,8 +5,27 @@
 #include    "table.h"
 #include    "getword.h"
 
+int first(int c);
+int rest(int c);
+int compare(const void *x, const void *y);
+void vfree(const void *key, void **count, void *cl);
 void wf(char *filename, FILE *fp);
 
+int first(int c) {
+    return isalpha(c);
+}
+
+int rest(int c) {
+    return isalpha(c) || c == '_';
+}
+
+int compare(const void *x, const void *y) {
+    return strcmp(*(char **)x, *(char **)y);
+}
+
+void vfree(const void *key, void **count, void *cl) {
+    FREE(*count);
+}
 
 void wf(char *filename, FILE *fp) {
     Table_T table = Table_new(0, NULL, NULL);
@@ -33,7 +52,20 @@ void wf(char *filename, FILE *fp) {
     
     if (filename) print("%s:\n", filename);
     // Print the words.
+    {
+        int i = 0;
+        void **array = Table_toArray(table, NULL);
+        qsort(array, Table_length(table), 2 * sizeof(*array), compare);
+        for (i = 0; array[i] != NULL; i += 2) {
+            printf("%d\t%s\n", *array[i], *array[i + 1]);
+        }
+        FREE(array);
+    }
+    
     // Deallocate the entries and the table.
+    Table_map(table, vfree, NULL);
+    Table_free(&table);
+    
 }
 
 int main(int argc, char *argv[]) {
