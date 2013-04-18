@@ -12,6 +12,7 @@
 		B9CF3B3B171EB98F00D8CAAF /* getword.c in Sources */ = {isa = PBXBuildFile; fileRef = B9CF3B36171EB98F00D8CAAF /* getword.c */; };
 		B9CF3B3C171EB98F00D8CAAF /* table.c in Sources */ = {isa = PBXBuildFile; fileRef = B9CF3B38171EB98F00D8CAAF /* table.c */; };
 		B9CF3B3D171EB98F00D8CAAF /* word_frequencies.c in Sources */ = {isa = PBXBuildFile; fileRef = B9CF3B3A171EB98F00D8CAAF /* word_frequencies.c */; };
+		B9D2CFDE17202F67005298EA /* atom.c in Sources */ = {isa = PBXBuildFile; fileRef = B9D2CFDD17202F67005298EA /* atom.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -36,6 +37,8 @@
 		B9CF3B38171EB98F00D8CAAF /* table.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = table.c; sourceTree = "<group>"; };
 		B9CF3B39171EB98F00D8CAAF /* table.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = table.h; sourceTree = "<group>"; };
 		B9CF3B3A171EB98F00D8CAAF /* word_frequencies.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = word_frequencies.c; sourceTree = "<group>"; };
+		B9D2CFDC17202F4C005298EA /* atom.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = atom.h; sourceTree = "<group>"; };
+		B9D2CFDD17202F67005298EA /* atom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = atom.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +86,8 @@
 				B9CF3B38171EB98F00D8CAAF /* table.c */,
 				B9CF3B39171EB98F00D8CAAF /* table.h */,
 				B9CF3B3A171EB98F00D8CAAF /* word_frequencies.c */,
+				B9D2CFDC17202F4C005298EA /* atom.h */,
+				B9D2CFDD17202F67005298EA /* atom.c */,
 			);
 			name = src;
 			sourceTree = "<group>";
@@ -142,6 +147,7 @@
 				B9CF3B3B171EB98F00D8CAAF /* getword.c in Sources */,
 				B9CF3B3C171EB98F00D8CAAF /* table.c in Sources */,
 				B9CF3B3D171EB98F00D8CAAF /* word_frequencies.c in Sources */,
+				B9D2CFDE17202F67005298EA /* atom.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
