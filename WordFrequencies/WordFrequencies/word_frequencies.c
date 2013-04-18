@@ -50,14 +50,14 @@ void wf(char *filename, FILE *fp) {
         }
     }
     
-    if (filename) print("%s:\n", filename);
+    if (filename) printf("%s:\n", filename);
     // Print the words.
     {
         int i = 0;
         void **array = Table_toArray(table, NULL);
         qsort(array, Table_length(table), 2 * sizeof(*array), compare);
         for (i = 0; array[i] != NULL; i += 2) {
-            printf("%d\t%s\n", *(int *)array[i], *(char *)array[i + 1]);
+            printf("%d\t%s\n", *(int *)array[i + 1], (char *)array[i]);
         }
         FREE(array);
     }
