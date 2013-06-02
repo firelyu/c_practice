@@ -13,6 +13,14 @@
 
 #define NELEM(x)    ((sizeof(x)) / (sizeof((x)[0])))
 
+static struct atom {
+    struct atom *link;
+    size_t      len;
+    char        *str;
+} *buckets[2048];
+
+
+// 256 entry array
 static unsigned long scatter[] = {
     2078917053, 143302914, 1027100827, 1953210302, 755253631, 2002600785,
     1405390230, 45248011, 1099951567, 433832350, 2018585307, 438263339,
@@ -59,14 +67,8 @@ static unsigned long scatter[] = {
     1884137923, 53392249, 1735424165, 1602280572
 };
 
-static struct atom {
-    struct atom *link;
-    int         len;
-    char        *str;
-} *buckets[2048];
-
 const char *Atom_string(const char *str) {
-    assert(str);
+    //assert(str);
     return Atom_new(str, strlen(str));
 }
 
@@ -75,9 +77,9 @@ const char *Atom_int(long n) {
     char    *s = str + sizeof(str);
     unsigned long   m;
     
-    if (n == LONG_MIN) m = LONG_MAX + 1UL;
-    else if (n < 0) m = -n;
-    else m = n;
+    if (n == LONG_MIN)  m = LONG_MAX + 1UL;
+    else if (n < 0)     m = -n;
+    else                m = n;
     
     do
         *--s = m % 10 + '0';
@@ -90,10 +92,13 @@ const char *Atom_int(long n) {
     return Atom_new(s, (str + sizeof(str)) - s);
 }
 
-const char *Atom_new(const char *str, int len) {
-    int     h, i;
+const char *Atom_new(const char *str, size_t len) {
+    unsigned long   h;
+    int         i;
     struct atom *pt;
     
+    //assert(str);
+    //assert(len > = 0);
     for (h = 0, i = 0; i < len; i++) {
         h = (h << 1) + scatter[(unsigned char)str[i]];
     }
@@ -101,13 +106,11 @@ const char *Atom_new(const char *str, int len) {
     for (pt = buckets[h]; pt != NULL; pt = pt->link) {
         if (pt->len == len) {
             for (int i = 0; i < len && pt->str[i] == str[i]; i++) ;
-            if (i == len) {
-                return pt->str;
-            }
+            if (i == len) return pt->str;
         }
     }
-    // Alloc the new entry
-    pt = ALLOC(sizeof(*pt) + len + 1);
+    
+    pt = (struct atom*)malloc(sizeof(*pt) + len + 1);
     pt->len = len;
     pt->str = (char *)(pt + 1);
     if (len > 0) memcpy(pt->str, str, len);
@@ -116,4 +119,20 @@ const char *Atom_new(const char *str, int len) {
     buckets[h] = pt;
     
     return pt->str;
+}
+
+// The str must be an atom.
+size_t Atom_length(const char *str) {
+    int     i;
+    struct atom *pt;
+    
+    for (i = 0; i < NELEM(buckets); i++) {
+        for (pt = buckets[i]; pt != NULL; pt = pt->link) {
+            if (pt->str == str) {
+                return pt->len;
+            }
+        }
+    }
+    
+    return 0;
 }

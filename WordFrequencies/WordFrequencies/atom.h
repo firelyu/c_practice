@@ -9,8 +9,8 @@
 #ifndef WordFrequencies_atom_h
 #define WordFrequencies_atom_h
 
-extern int Atom_length(const char *str);
-extern const char *Atom_new(const char *str, int len);
+extern size_t Atom_length(const char *str);
+extern const char *Atom_new(const char *str, size_t len);
 extern const char *Atom_string(const char *str);
 extern const char *Atom_int(long n);
 
