@@ -1,0 +1,60 @@
+TRY
+    S
+
+EXCEPT(e1)
+    S1
+
+EXCEPT(e2)
+    S2
+    
+ELSE
+    S0
+
+END_TRY
+
+do {
+    if (first return from setjmp) {
+        S
+    } else if (exception is e1) {
+        S1
+    } else if (exception is e2) {
+        S2
+    } else {
+        S0
+    }
+    
+    if (an exception occured and was not handled) {
+        RERAISE;
+    }
+} while(0)
+
+do {
+    volatile int    Except_flag;
+    
+    Except_Frame    Except_frame;
+    Except_frame.prev = Except_stack;
+    Except_stack = &Except_frame;
+    
+    Except_flag = setjmp(Except_frame.env);
+    
+    if (Except_flag == Except_entered) {
+        S;
+        // Pop
+        if (Except_flag == Except_entered)
+            Except_stack = Except_stack->prev;
+    } else if (Except_frame.exception == &(e1)) {
+        Except_flag = Except_handled;
+        S1;
+        // Pop
+        if (Except_flag == Except_entered)
+            Except_stack = Except_stack->prev;
+    } else {
+        Except_flag = Except_handled;
+        S0;
+        // Pop
+        if (Except_flag == Except_entered)
+            Except_stack = Except_stack->prev;
+    }
+
+    if (Except_flag == Except_raised) Except_raise(Except_frame.exception, Except_frame.file, Except_frame.line);
+} while(0)
